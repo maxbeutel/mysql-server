@@ -91,6 +91,11 @@
 #pragma implementation        // gcc: Class implementation
 #endif
 
+// include them before any other headers which might include my_global.h
+// see https://trac.osgeo.org/gdal/ticket/2972
+#include <fstream>
+#include <cassert>
+
 #include "sql_priv.h"
 #include "sql_class.h"           // MYSQL_HANDLERTON_INTERFACE_VERSION
 #include "ha_example.h"
@@ -298,7 +303,8 @@ ha_example::ha_example(handlerton *hton, TABLE_SHARE *table_arg)
 */
 
 static const char *ha_example_exts[] = {
-  NullS
+    ".html",
+    NullS
 };
 
 const char **ha_example::bas_ext() const
@@ -1016,19 +1022,25 @@ ha_rows ha_example::records_in_range(uint inx, key_range *min_key,
   ha_create_table() in handle.cc
 */
 
-int ha_example::create(const char *name, TABLE *table_arg,
-                       HA_CREATE_INFO *create_info)
+int ha_example::create(const char *name, TABLE *table_arg, HA_CREATE_INFO *create_info)
 {
-  DBUG_ENTER("ha_example::create");
+    DBUG_ENTER("ha_example::create");
 
-  String file_name;
-  file_name.append("foo");
-  file_name.append("bar");
-  file_name.append("baz");
+    String file_name;
+    file_name.append(name);
+    file_name.append(*bas_ext());
 
-  DBUG_PRINT("ha_example", ("filename is '%s'", file_name.c_ptr()));
+    DBUG_PRINT("ha_example", ("filename is '%s'", file_name.c_ptr()));
 
-  DBUG_RETURN(0);
+    std::ofstream table_file;
+    table_file.open(file_name.c_ptr());
+    assert(table_file.is_open());
+
+    table_file << "<h1>Contents of " << table_arg->s->table_name.str  << "</h1>\n";
+
+    table_file.close();
+
+    DBUG_RETURN(0);
 }
 
 
