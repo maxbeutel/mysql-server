@@ -1,0 +1,14 @@
+tail -n1000 -f /tmp/mysqld.trace
+
+sudo /usr/local/mysql/bin/mysqld --debug --user=root
+
+make && sudo make install && /usr/local/mysql/bin/mysql -uroot -e "select * from test.tbl_ex";
+
+https://dev.mysql.com/doc/refman/5.7/en/source-configuration-options.html#option_cmake_cmake_build_type
+https://dev.mysql.com/doc/refman/5.0/en/compiling-for-debugging.html
+https://dev.mysql.com/doc/refman/5.0/en/making-trace-files.html
+
+
+Build mysql
+https://github.com/tony2001/pinba_engine/issues/12
+cmake . && cd include && make
