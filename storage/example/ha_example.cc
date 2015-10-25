@@ -449,14 +449,42 @@ int ha_example::close(void)
 
 int ha_example::write_row(uchar *buf)
 {
-  DBUG_ENTER("ha_example::write_row");
-  /*
-    Example of a successful write_row. We don't store the data
-    anywhere; they are thrown away. A real implementation will
-    probably need to do something with 'buf'. We report a success
-    here, to pretend that the insert was successful.
-  */
-  DBUG_RETURN(0);
+    DBUG_ENTER("ha_example::write_row");
+
+    if (table->timestamp_field_type & TIMESTAMP_AUTO_SET_ON_INSERT) {
+        table->timestamp_field->set_time();
+    }
+
+    if (table->next_number_field && buf == table->record[0]) {
+        int error;
+
+        if ((error = update_auto_increment())) {
+            return error;
+        }
+    }
+
+    my_bitmap_map *old_map = dbug_tmp_use_all_columns(table, table->read_set);
+    my_ptrdiff_t offset = (my_ptrdiff_t) (buf - table->record[0]);
+
+    for (uint i = 0; i < table->s->fields; i++) {
+        Field *field = table->field[i];
+        field->move_field_offset(offset);
+
+        uint index = field->field_index;
+
+        char tmp_buf[1024];
+        String tmp(tmp_buf, sizeof(tmp_buf), &my_charset_bin);
+        String *val = field->val_str(&tmp, &tmp);
+
+        DBUG_PRINT("ha_example", ("at index '%d'", index));
+        DBUG_PRINT("ha_example", ("table name is '%s'", field->table_name[0]));
+        DBUG_PRINT("ha_example", ("name is '%s'", field->field_name));
+        DBUG_PRINT("ha_example", ("value is '%s'", val->c_ptr()));
+    }
+
+    dbug_tmp_restore_column_map(table->read_set, old_map);
+
+    DBUG_RETURN(0);
 }
 
 
@@ -628,6 +656,7 @@ int ha_example::index_last(uchar *buf)
 int ha_example::rnd_init(bool scan)
 {
   DBUG_ENTER("ha_example::rnd_init");
+
   DBUG_RETURN(HA_ERR_WRONG_COMMAND);
 }
 
@@ -991,10 +1020,14 @@ int ha_example::create(const char *name, TABLE *table_arg,
                        HA_CREATE_INFO *create_info)
 {
   DBUG_ENTER("ha_example::create");
-  /*
-    This is not implemented but we want someone to be able to see that it
-    works.
-  */
+
+  String file_name;
+  file_name.append("foo");
+  file_name.append("bar");
+  file_name.append("baz");
+
+  DBUG_PRINT("ha_example", ("filename is '%s'", file_name.c_ptr()));
+
   DBUG_RETURN(0);
 }
 
