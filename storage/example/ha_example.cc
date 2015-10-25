@@ -91,8 +91,6 @@
 #pragma implementation        // gcc: Class implementation
 #endif
 
-// include them before any other headers which might include my_global.h
-// see https://trac.osgeo.org/gdal/ticket/2972
 #include <fstream>
 #include <cassert>
 
@@ -390,13 +388,27 @@ static bool example_is_supported_system_table(const char *db,
 
 int ha_example::open(const char *name, int mode, uint test_if_locked)
 {
-  DBUG_ENTER("ha_example::open");
+    DBUG_ENTER("ha_example::open");
 
-  if (!(share = get_share(name, table)))
-    DBUG_RETURN(1);
-  thr_lock_data_init(&share->lock,&lock,NULL);
+    if (!(share = get_share(name, table))) {
+        DBUG_RETURN(1);
+    }
 
-  DBUG_RETURN(0);
+    thr_lock_data_init(&share->lock, &lock, NULL);
+
+    String table_file_pathname;
+    table_file_pathname.append(name);
+    table_file_pathname.append(*bas_ext());
+
+    DBUG_PRINT("ha_example", ("filename is '%s'", table_file_pathname.c_ptr()));
+
+    std::ofstream table_file;
+    table_file.open(table_file_pathname.c_ptr());
+    assert(table_file.is_open());
+
+    //    open_table_file = table_file;
+
+    DBUG_RETURN(0);
 }
 
 
@@ -1026,17 +1038,24 @@ int ha_example::create(const char *name, TABLE *table_arg, HA_CREATE_INFO *creat
 {
     DBUG_ENTER("ha_example::create");
 
-    String file_name;
-    file_name.append(name);
-    file_name.append(*bas_ext());
+    String table_file_pathname;
+    table_file_pathname.append(name);
+    table_file_pathname.append(*bas_ext());
 
-    DBUG_PRINT("ha_example", ("filename is '%s'", file_name.c_ptr()));
+    DBUG_PRINT("ha_example", ("filename is '%s'", table_file_pathname.c_ptr()));
 
     std::ofstream table_file;
-    table_file.open(file_name.c_ptr());
+    table_file.open(table_file_pathname.c_ptr());
     assert(table_file.is_open());
 
     table_file << "<h1>Contents of " << table_arg->s->table_name.str  << "</h1>\n";
+    table_file << "<ul>\n";
+
+    for (uint i = 0; i < table_arg->s->fields; i++) {
+        table_file << "<li>" << table_arg->field[i]->field_name << "</li>\n";
+    }
+
+    table_file << "</ul>\n";
 
     table_file.close();
 

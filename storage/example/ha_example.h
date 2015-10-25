@@ -35,6 +35,10 @@
 #pragma interface			/* gcc class implementation */
 #endif
 
+// include c++ standard headers before any other headers which might include my_global.h
+// see https://trac.osgeo.org/gdal/ticket/2972
+#include <fstream>
+
 #include "my_global.h"                   /* ulonglong */
 #include "thr_lock.h"                    /* THR_LOCK, THR_LOCK_DATA */
 #include "handler.h"                     /* handler */
@@ -58,6 +62,9 @@ class ha_example: public handler
 {
   THR_LOCK_DATA lock;      ///< MySQL lock
   EXAMPLE_SHARE *share;    ///< Shared lock info
+
+private:
+  std::ofstream open_table_file;
 
 public:
   ha_example(handlerton *hton, TABLE_SHARE *table_arg);
