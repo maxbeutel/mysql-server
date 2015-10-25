@@ -79,7 +79,7 @@
   ha_example::open() would also have been necessary. Calls to
   ha_example::extra() are hints as to what will be occuring to the request.
 
-  A Longer Example can be found called the "Skeleton Engine" which can be 
+  A Longer Example can be found called the "Skeleton Engine" which can be
   found on TangentOrg. It has both an engine and a full build environment
   for building a pluggable storage engine.
 
@@ -98,7 +98,7 @@
 #include "sql_plugin.h"
 
 static handler *example_create_handler(handlerton *hton,
-                                       TABLE_SHARE *table, 
+                                       TABLE_SHARE *table,
                                        MEM_ROOT *mem_root);
 
 handlerton *example_hton;
@@ -111,7 +111,7 @@ static bool example_is_supported_system_table(const char *db,
 
 /* Variables for example share methods */
 
-/* 
+/*
    Hash used to track the number of open tables; variable for example share
    methods
 */
@@ -268,7 +268,7 @@ static int free_share(EXAMPLE_SHARE *share)
 }
 
 static handler* example_create_handler(handlerton *hton,
-                                       TABLE_SHARE *table, 
+                                       TABLE_SHARE *table,
                                        MEM_ROOT *mem_root)
 {
   return new (mem_root) ha_example(hton, table);
